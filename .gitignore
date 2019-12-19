@@ -1,5 +1,6 @@
 # Project-specific
 tmpdir/
+nc2cog_run.sh
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
