@@ -1,0 +1,27 @@
+# Configuration file that can be used to add additional metadata to the
+# COG file. Used by update_metadata_cog.py.
+
+meta:
+  Description: "NASA GEOS composition forecast (GEOS-CF) model forecast"
+  Forecast_Timestamp: "${timestamp}%Y-%m-%d %H:%M:00z"
+  Initialization_Timestamp: "${forecast_init_timestamp}%Y-%m-%d %H:%M:00z"
+o3:
+  scal: 1.0e+9
+  meta:
+    Description: "Hourly averaged surface concentration of ozone (O3, MW = 48 g mol-1)"
+    Species: "Ozone (O3)" 
+    Unit: "ppbv"
+    Original_VariableName: "O3"
+no2:
+  scal: 1.0e+9
+  meta:
+    Description: "Hourly averaged surface concentration of nitrogen dioxide (NO2, MW = 46 g mol-1)"
+    Species: "Nitrogen dioxide (NO2)" 
+    Unit: "ppbv"
+    Original_VariableName: "NO2"
+pm25:
+  meta:
+    Description: "Hourly averaged surface concentration of fine particulate matter with diameter below 2.5 micrometer at 35% relative humidity" 
+    Species: "Fine particulate matter (PM2.5)"
+    Unit: "microgram m-3"
+    Original_VariableName: "PM25_RH35_GCC"

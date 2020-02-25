@@ -2,8 +2,8 @@
 # COG file. Used by update_metadata_cog.py.
 
 meta:
-  Description: "NASA GEOS composition forecast (GEOS-CF) model output"
-  Timestamp: "%y4-%m2-%d2 %h2:%n2:00z"
+  Description: "NASA GEOS composition forecast (GEOS-CF) model analysis (hindcast)"
+  Model_Timestamp: "${timestamp}%Y-%m-%d %H:%M:00z"
 o3:
   scal: 1.0e+9
   meta:

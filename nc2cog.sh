@@ -11,35 +11,24 @@
 # filename are also specified below.
 #
 # Example: 
-# ./nc2cog.sh 2019 1 1 0
+# ./nc2cog.sh /discover/nobackup/projects/gmao/geos_cf/pub/GEOS-CF_NRT/forecast/Y2020/M02/D22/H12/GEOS-CF.v01.fcst.chm_tavg_1hr_g1440x721_v1.20200222_12z+20200227_1130z.nc4
 # 
 # History:
 # 2019/12/19 - christoph.a.keller@nasa.gov - Initial version
+# 2019/02/24 - christoph.a.keller@nasa.gov - Pass filename, distinguish hindcast & forecast 
 ##############################################################################
 
-# ---Settings:
-year=$1
-month=$2
-day=$3
-hour=$4
-# set datestamp
-Y=`printf "%04d\n" $year`
-M=`printf "%02d\n" $month`
-D=`printf "%02d\n" $day`
-H=`printf "%02d\n" $hour`
-datestamp="${Y}${M}${D}_${H}30z"
-
-# Path with netCDF files
-ipath="/discover/nobackup/projects/gmao/geos_cf/pub/GEOS-CF_NRT/ana/Y${Y}/M${M}/D${D}"
-# Path to write geotiffs
-opath="/discover/nobackup/projects/gmao/geos_cf_dev/cog/tif"
-
 # Define input file
-ifile="${ipath}/GEOS-CF.v01.rpl.chm_tavg_1hr_g1440x721_v1.${datestamp}.nc4"
+ifile=$1
 if [ ! -f $ifile ]; then
  echo "Error - file does not exist: ${ifile}"
  exit
 fi
+
+# extract filename, prefix, and timestamp 
+filename=${ifile##*/} 
+prefix=${filename%.*}
+timestamp=${prefix##*.}
 
 # Write all files into temporary directory
 if [ ! -d tmpdir ]; then
@@ -56,26 +45,19 @@ for spec in "${allspecs[@]}"; do
  elif [ ${spec} = "pm25" ]; then
   ncspec="PM25_RH35_GCC"
  fi
- ofile="tmpdir/GEOS-CF.v01.rpl.chm_tavg_1hr_g1440x721_v1.${datestamp}.${spec}.tif"
+ ofile="tmpdir/${prefix}.${spec}.tif"
  gdal_translate -q NETCDF:${ifile}:${ncspec} -of 'Gtiff' -a_srs "+proj=latlong" tmp.tif
- python update_metadata_cog.py -v 0 -i 'tmp.tif' -o 'tmp2.tif' -y $year -m $month -d $day -hr $hour -s $spec 
+ # update metadata. different for forecast vs hindcast data
+ if [[ $timestamp == *"_12z+"* ]]; then
+  initialtime=`echo $timestamp | cut -f1 -d+`
+  filetime=`echo $timestamp | cut -f2 -d+`
+  python update_metadata_cog.py -v 0 -i 'tmp.tif' -o 'tmp2.tif' -t $filetime -f $initialtime -s $spec -c 'config/cog_meta_forecast.yaml'
+ else
+  filetime=`echo $timestamp`
+  python update_metadata_cog.py -v 0 -i 'tmp.tif' -o 'tmp2.tif' -t $filetime -s $spec -c 'config/cog_meta_hindcast.yaml'
+ fi
  gdaladdo -q -r average tmp2.tif 2 4 8 16 32
  gdal_translate -q tmp2.tif ${ofile} -co COMPRESS=LZW -co TILED=YES -co COPY_SRC_OVERVIEWS=YES
  /bin/rm -r tmp.tif tmp2.tif
 done
 
-# Move to final location
-if [ ! -d $opath ]; then
- echo "Error - cannot move files because main output path does not exist: ${opath}"
- exit
-fi
-opath="${opath}/Y${Y}/M${M}/D${D}"
-if [ ! -d $opath ]; then
- /bin/mkdir -p $opath
-fi
-# Move files
-if [ -d $opath ]; then
- /bin/mv tmpdir/*.tif $opath
-else
- echo "Something went wrong, could not move files to final location - they are still in the tmp folder!"
-fi

@@ -2,6 +2,8 @@
 #
 #  Description: Update metadata of a geotiff file 
 #  History:     12/19/2019 - christoph.a.keller@nasa.gov - Initial version 
+#  History:     02/24/2019 - christoph.a.keller@nasa.gov - Now pass datetime strings,
+#                                                          distinguish hindcast/forecast. 
 ##########################################################################
 """
 Update geotiff metadata and possibly apply a scale factor to the raster data.
@@ -50,8 +52,8 @@ def main(args):
     dst.write(arr,1)
 #---Meta data
     otags = src.tags()
-    # Attempt to get dates from original metadata if they are not provided
-    if args.year is None or args.month is None or args.day is None or args.hour is None:
+    # Attempt to get analysis date from original metadata if they are not provided
+    if args.timestamp is None:
         assert('NC_GLOBAL#RangeBeginningDate' in otags.keys())
         bdate = dt.datetime.strptime(otags['NC_GLOBAL#RangeBeginningDate'],'%Y-%m-%d')
         assert('NC_GLOBAL#RangeBeginningTime' in otags.keys())
@@ -64,17 +66,11 @@ def main(args):
         d1 = dt.datetime(bdate.year,bdate.month,bdate.day,btime.hour,btime.minute,btime.second)
         d2 = dt.datetime(edate.year,edate.month,edate.day,etime.hour,etime.minute,etime.second)
         idate = d1+(d2-d1)/2.
-        if args.year is None:
-            args.year = idate.year 
-        if args.month is None:
-            args.month = idate.month
-        if args.day is None:
-            args.day = idate.day
-        if args.hour is None:
-            args.hour = idate.hour
-        if args.minute is None:
-            args.minute = idate.minute
-    # preserve some original metadata
+    else:
+        idate = dt.datetime.strptime(args.timestamp,'%Y%m%d_%H%Mz')
+    # Forecast initialization date
+    initdate = None if args.forecast_init_timestamp is None else dt.datetime.strptime(args.forecast_init_timestamp,'%Y%m%d_%Hz')
+    # Preserve some original metadata
     dst.update_tags(History='File created on '+dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
     dst.update_tags(Contact='geos-cf@lists.nasa.gov')
     if 'NC_GLOBAL#Filename' in otags.keys():
@@ -83,17 +79,17 @@ def main(args):
         dst.update_tags(Original_file_history=otags['NC_GLOBAL#History'])
     if 'NC_GLOBAL#References' in otags.keys():
         dst.update_tags(References=otags['NC_GLOBAL#References'])
-    # additional metadata
+    # Additional metadata
     if 'meta' in metalist.keys():
         for k,v in metalist['meta'].items():
-            v = v.replace('%y4',str(args.year)).replace('%m2',str(args.month).zfill(2)).replace('%d2',str(args.day).zfill(2)).replace('%h2',str(args.hour).zfill(2)).replace('%n2',str(args.minute).zfill(2))
+            v = _check_v(v,idate,initdate)
             tag = {k:v}
             dst.update_tags(**tag)
-    # band metadata
+    # Band metadata
     if args.spec in metalist.keys():
         if 'meta' in metalist[args.spec].keys():
             for k,v in metalist[args.spec]['meta'].items():
-                v = v.replace('%y4',str(args.year)).replace('%m2',str(args.month).zfill(2)).replace('%d2',str(args.day).zfill(2)).replace('%h2',str(args.hour).zfill(2)).replace('%n2',str(args.minute).zfill(2))
+                v = _check_v(v,idate,initdate)
                 tag = {k:v}
                 dst.update_tags(1,**tag)
     # cleanup 
@@ -104,17 +100,23 @@ def main(args):
     return
 
 
+def _check_v(v,idate,initdate):
+    '''Check variable pattern and replace dates as needed'''
+    if '${timestamp}' in v:
+        v = idate.strftime(v.replace('${timestamp}',''))
+    if '${forecast_init_timestamp}' in v:
+        v = initdate.strftime(v.replace('${forecast_init_timestamp}',''))
+    return v
+
+
 def parse_args():
     p = argparse.ArgumentParser(description='Undef certain variables')
     p.add_argument('-i','--ifile',type=str,help='input geotif file', default='tmp.tif')
     p.add_argument('-o','--ofile',type=str,help='output geotif file', default='tmp_edit.tif')
     p.add_argument('-s','--spec',type=str,help='species name',default='o3')
-    p.add_argument('-c','--yaml-file',type=str,help='YAML file containing metadata information for the file to be created. The key,value pairs must be stored in a dictionary labeled `meta`. Metadata on a band level must have the species name as key label', default='config/cog_meta.yaml')
-    p.add_argument('-y','--year',type=int,help='year for timestamp of the data on file',default=None)
-    p.add_argument('-m','--month',type=int,help='month for timestamp of the data on file',default=None)
-    p.add_argument('-d','--day',type=int,help='day for timestamp of the data on file',default=None)
-    p.add_argument('-hr','--hour',type=int,help='hour for timestamp of the data on file',default=None)
-    p.add_argument('-mn','--minute',type=int,help='minute for timestamp of the data on file',default=30)
+    p.add_argument('-c','--yaml-file',type=str,help='YAML file containing metadata information for the file to be created. The key,value pairs must be stored in a dictionary labeled `meta`. Metadata on a band level must have the species name as key label', default='config/cog_meta_hindcast.yaml')
+    p.add_argument('-t','--timestamp',type=str,help='timestamp of the data on file, in format %Y%m%d_%H%Mz',default=None)
+    p.add_argument('-f','--forecast_init_timestamp',type=str,help='timestamp of the forecast initialization, in format %Y%m%d_%Hz',default=None)
     p.add_argument('-v','--verbose',type=int,help='verbose level', default=0)
     return p.parse_args()
 
