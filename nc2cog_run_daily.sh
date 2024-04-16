@@ -46,33 +46,5 @@ if [ -d ${idir} ]; then
  /home/cakelle2/bin/aws s3 sync /discover/nobackup/projects/gmao/geos_cf_dev/cog/tif/hindcast/Y${Y}/ s3://dh-eis-fire-usw2-shared/geos-cf-cog/Y${Y}/ --acl bucket-owner-full-control 
 fi
 
-### Move hindcasts to ASDI 
-##thisday="${Y}-${M}-${D}"
-##prevday=$(/bin/date -I -d "$thisday - 1 day")
-##pYmd=$(/bin/date -d "${prevday}" +%Y%m%d)
-##pY=$(/bin/date -d "${prevday}" +%Y)
-##odir="/discover/nobackup/projects/gmao/geos_cf_dev/cog/tif/hindcast/Y${pY}/${pYmd}"
-##if [ -d ${odir} ]; then
-##  /home/cakelle2/bin/aws s3 cp --profile asdi ${odir} s3://geos-cf/hindcast/Y${pY}/${pYmd} --recursive --include "*_1[2-9]30z.*.tif"
-##  /home/cakelle2/bin/aws s3 cp --profile asdi ${odir} s3://geos-cf/hindcast/Y${pY}/${pYmd} --recursive --include "*_2[0-9]30z.*.tif"
-##fi
-
-##odir="/discover/nobackup/projects/gmao/geos_cf_dev/cog/tif/hindcast/Y${Y}/${Ymd}"
-##if [ -d ${odir} ]; then
-##  /home/cakelle2/bin/aws s3 cp --profile asdi ${odir} s3://geos-cf/hindcast/Y${Y}/${Ymd} --recursive --include "*.tif"
-##fi
-##
-### Move forecasts to ASDI 
-##odir="/discover/nobackup/projects/gmao/geos_cf_dev/cog/tif/forecast/Y${Y}/${Ymd}"
-##if [ -d ${odir} ]; then
-##  /home/cakelle2/bin/aws s3 cp --profile asdi ${odir} s3://geos-cf/forecast/Y${Y}/${Ymd} --recursive --include "*.tif"
-##fi
-##
-### Update latest forecast entry in bucket
-##if [ -d ${odir} ]; then
-##  /home/cakelle2/bin/aws s3 rm --profile asdi s3://geos-cf/forecast/Latest --recursive --include "*.tif"
-##  /home/cakelle2/bin/aws s3 cp --profile asdi ${odir} s3://geos-cf/forecast/Latest --recursive --include "*.tif"
-##fi
-
 echo $Ymd
 echo "All done!"
