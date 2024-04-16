@@ -31,8 +31,8 @@ prefix=${filename%.*}
 timestamp=${prefix##*.}
 
 # Write all files into temporary directory
-if [ ! -d tmpdir ]; then
- /bin/mkdir tmpdir
+if [ ! -d /discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/tmpdir ]; then
+ /bin/mkdir /discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/tmpdir
 fi
 
 # Create COG for each species
@@ -45,19 +45,24 @@ for spec in "${allspecs[@]}"; do
  elif [ ${spec} = "pm25" ]; then
   ncspec="PM25_RH35_GCC"
  fi
- ofile="tmpdir/${prefix}.${spec}.tif"
- gdal_translate -q NETCDF:${ifile}:${ncspec} -of 'Gtiff' -a_srs "+proj=latlong" tmp.tif
+ ofile="/discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/tmpdir/${prefix}.${spec}.tif"
+ #/discover/swdev/mathomp4/anaconda/2019.10_py3.7/2019-12-17/bin/gdal_translate -q NETCDF:${ifile}:${ncspec} -of 'Gtiff' -a_srs "+proj=latlong" tmp.tif
+ /usr/local/other/python/GEOSpyD/4.8.3_py2.7/2020-08-11/bin/gdal_translate -q NETCDF:${ifile}:${ncspec} -of 'Gtiff' -a_srs "+proj=latlong" /discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/tmp.tif
  # update metadata. different for forecast vs hindcast data
  if [[ $timestamp == *"_12z+"* ]]; then
   initialtime=`echo $timestamp | cut -f1 -d+`
   filetime=`echo $timestamp | cut -f2 -d+`
-  python update_metadata_cog.py -v 0 -i 'tmp.tif' -o 'tmp2.tif' -t $filetime -f $initialtime -s $spec -c 'config/cog_meta_forecast.yaml'
+  #/discover/swdev/mathomp4/anaconda/2019.10_py3.7/2019-12-17/bin/python update_metadata_cog.py -v 0 -i 'tmp.tif' -o 'tmp2.tif' -t $filetime -f $initialtime -s $spec -c 'config/cog_meta_forecast.yaml'
+  /usr/local/other/python/GEOSpyD/4.8.3_py2.7/2020-08-11/bin/python /discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/update_metadata_cog.py -v 0 -i '/discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/tmp.tif' -o '/discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/tmp2.tif' -t $filetime -f $initialtime -s $spec -c '/discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/config/cog_meta_forecast.yaml'
  else
   filetime=`echo $timestamp`
-  python update_metadata_cog.py -v 0 -i 'tmp.tif' -o 'tmp2.tif' -t $filetime -s $spec -c 'config/cog_meta_hindcast.yaml'
+  #/discover/swdev/mathomp4/anaconda/2019.10_py3.7/2019-12-17/bin/python update_metadata_cog.py -v 0 -i 'tmp.tif' -o 'tmp2.tif' -t $filetime -s $spec -c 'config/cog_meta_hindcast.yaml'
+  /usr/local/other/python/GEOSpyD/4.8.3_py2.7/2020-08-11/bin/python /discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/update_metadata_cog.py -v 0 -i '/discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/tmp.tif' -o '/discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/tmp2.tif' -t $filetime -s $spec -c '/discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/config/cog_meta_hindcast.yaml'
  fi
- gdaladdo -q -r average tmp2.tif 2 4 8 16 32
- gdal_translate -q tmp2.tif ${ofile} -co COMPRESS=LZW -co TILED=YES -co COPY_SRC_OVERVIEWS=YES
- /bin/rm -r tmp.tif tmp2.tif
+ #/discover/swdev/mathomp4/anaconda/2019.10_py3.7/2019-12-17/bin/gdaladdo -q -r average tmp2.tif 2 4 8 16 32
+ #/discover/swdev/mathomp4/anaconda/2019.10_py3.7/2019-12-17/bin/gdal_translate -q tmp2.tif ${ofile} -co COMPRESS=LZW -co TILED=YES -co COPY_SRC_OVERVIEWS=YES
+ /usr/local/other/python/GEOSpyD/4.8.3_py2.7/2020-08-11/bin/gdaladdo -q -r average /discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/tmp2.tif 2 4 8 16 32
+ /usr/local/other/python/GEOSpyD/4.8.3_py2.7/2020-08-11/bin/gdal_translate -q /discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/tmp2.tif ${ofile} -co COMPRESS=LZW -co TILED=YES -co COPY_SRC_OVERVIEWS=YES
+ /bin/rm -r /discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/tmp.tif /discover/nobackup/projects/gmao/geos_cf_dev/cog/nc2cog/tmp2.tif
 done
 
